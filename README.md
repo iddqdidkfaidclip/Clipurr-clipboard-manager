@@ -53,7 +53,7 @@ Like <strong>Win + V</strong>, but better — and built for Mac.<br>
 3. First launch: right-click the app → **Open** (macOS Gatekeeper — normal for apps outside the App Store)
 4. Grant **Accessibility** when asked — needed for auto-paste
 
-That’s it. No App Store, no paid Apple Developer account required for users.
+That’s it. No App Store, nothing to pay.
 
 ## Build
 
