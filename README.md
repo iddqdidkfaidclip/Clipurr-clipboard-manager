@@ -18,7 +18,10 @@ Like <strong>Win + V</strong>, but better — and built for Mac.<br>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/hero-collage.png" alt="Clipurr — history, menu bar, and settings" width="900">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-collage-dark.png">
+    <img src="docs/screenshots/hero-collage-light.png" alt="Clipurr — history, menu bar, and settings" width="900">
+  </picture>
 </p>
 
 ---
