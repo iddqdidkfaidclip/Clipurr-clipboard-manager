@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  release:
+    runs-on: macos-15
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install packaging tools
+        run: brew install xcodegen create-dmg
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Verify tag matches MARKETING_VERSION
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION="$(python3 - <<'PY'
+          import re
+          text = open("project.yml", encoding="utf-8").read()
+          match = re.search(r"MARKETING_VERSION:\s*([0-9.]+)", text)
+          if not match:
+              raise SystemExit("MARKETING_VERSION not found in project.yml")
+          print(match.group(1))
+          PY
+          )"
+          if [[ "$TAG" != "$VERSION" ]]; then
+            echo "Tag v$TAG does not match MARKETING_VERSION $VERSION in project.yml"
+            exit 1
+          fi
+          echo "Tag and marketing version both $VERSION"
+
+      - name: Import signing certificate
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        run: |
+          chmod +x scripts/import-signing-cert.sh scripts/package-dmg.sh scripts/publish-appcast.sh
+          ./scripts/import-signing-cert.sh
+
+      - name: Build DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: ./scripts/package-dmg.sh
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          assets=(dist/*.dmg dist/*.delta)
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            # Re-run / retag: refresh assets on the existing release.
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" --generate-notes --verify-tag
+          fi
+
+      - name: Generate Sparkle appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: ./scripts/publish-appcast.sh
+
+      - name: Commit appcast to docs/
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DEFAULT_BRANCH="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)"
+          cp docs/appcast.xml /tmp/clipurr-appcast.xml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$DEFAULT_BRANCH"
+          git checkout -f -B "appcast-update" "origin/${DEFAULT_BRANCH}"
+          mkdir -p docs
+          cp /tmp/clipurr-appcast.xml docs/appcast.xml
+          git add docs/appcast.xml
+          if git diff --staged --quiet; then
+            echo "appcast unchanged"
+            exit 0
+          fi
+          git commit -m "Update Sparkle appcast for ${GITHUB_REF_NAME}"
+          git push origin "HEAD:refs/heads/${DEFAULT_BRANCH}"
+
+      - name: Ensure GitHub Pages (docs/)
+        continue-on-error: true
+        run: |
+          # Idempotent: create or update Pages from /docs on the default branch.
+          DEFAULT_BRANCH="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)"
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" \
+              -f "build_type=legacy" \
+              -f "source[branch]=${DEFAULT_BRANCH}" \
+              -f "source[path]=/docs" || true
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" \
+              -f "build_type=legacy" \
+              -f "source[branch]=${DEFAULT_BRANCH}" \
+              -f "source[path]=/docs" || true
+          fi

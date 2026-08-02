@@ -1,0 +1,196 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr uses System Events to paste the selected clipboard item into the app you were using."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr 使用系统事件将所选剪贴板项目粘贴到您刚才使用的应用中。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr usa Eventos del Sistema para pegar el elemento seleccionado del portapapeles en la app que estabas usando."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم Clipurr أحداث النظام للصق عنصر الحافظة المحدد في التطبيق الذي كنت تستخدمه."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr menggunakan System Events untuk menempelkan item papan klip yang dipilih ke app yang sedang Anda gunakan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Clipurr usa Eventos do Sistema para colar o item selecionado da área de transferência no app que você estava usando."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr utilise les Événements système pour coller l’élément sélectionné du presse-papiers dans l’app que vous utilisiez."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr はシステムイベントを使って、選択したクリップボード項目を直前に使っていたアプリにペーストします。"
+          }
+        },
+        "be": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr выкарыстоўвае Сістэмныя падзеі, каб уставіць выбраны элемент буфера абмену ў праграму, якой вы карысталіся."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr использует Системные события, чтобы вставить выбранный элемент буфера обмена в приложение, которым вы пользовались."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr verwendet System Events, um den ausgewählten Zwischenablageeintrag in die App einzufügen, die du gerade verwendet hast."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr는 시스템 이벤트를 사용해 선택한 클립보드 항목을 사용 중이던 앱에 붙여넣습니다."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr usa Eventi di sistema per incollare l’elemento selezionato degli appunti nell’app che stavi usando."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr, seçilen pano öğesini kullandığınız uygulamaya yapıştırmak için Sistem Olaylarını kullanır."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr dùng System Events để dán mục clipboard đã chọn vào ứng dụng bạn đang dùng."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr używa Zdarzeń systemowych, aby wkleić wybrany element schowka do aplikacji, której używałeś."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr gebruikt Systeemgebeurtenissen om het geselecteerde klemborditem te plakken in de app die je aan het gebruiken was."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr ใช้ System Events เพื่อวางรายการคลิปบอร์ดที่เลือกไปยังแอปที่คุณกำลังใช้"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr 使用系統事件將所選剪貼板項目貼到您剛才使用的 App。"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr चयनित क्लिपबोर्ड आइटम को आपके द्वारा उपयोग किए जा रहे ऐप में पेस्ट करने के लिए System Events का उपयोग करता है।"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr از System Events برای جای‌گذاری آیتم انتخاب‌شده کلیپ‌بورد در برنامه‌ای که در حال استفاده بودید بهره می‌برد."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr använder Systemhändelser för att klistra in det valda urklippsobjektet i appen du använde."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr používá Systémové události k vložení vybrané položky schránky do aplikace, kterou jste používali."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr folosește Evenimente de sistem pentru a lipi elementul selectat din clipboard în aplicația pe care o foloseai."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Clipurr a Rendszereseményeket használja, hogy a kiválasztott vágólapelemet a használt appba illessze."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Clipurr χρησιμοποιεί τα Συμβάντα συστήματος για να επικολλήσει το επιλεγμένο στοιχείο πρόχειρου στην εφαρμογή που χρησιμοποιούσατε."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr משתמש באירועי מערכת כדי להדביק את פריט לוח הגזירים שנבחר באפליקציה שבה השתמשת."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr bruger Systemhændelser til at indsætte det valgte udklipsholderelement i den app, du brugte."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr käyttää Järjestelmätapahtumia liittääkseen valitun leikepöytäkohteen sovellukseen, jota käytit."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr bruker Systemhendelser for å lime inn det valgte utklippstavleelementet i appen du brukte."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipurr menggunakan System Events untuk menampal item papan klip yang dipilih ke dalam app yang anda sedang gunakan."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

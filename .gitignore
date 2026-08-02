@@ -1,0 +1,39 @@
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+.swiftpm/
+.sparkle-tools/
+
+# Release output
+dist/
+packaging/dmg/_frame_preview.png
+
+# Individual screenshots (collage is committed)
+docs/screenshots/history.png
+docs/screenshots/menu-bar.png
+docs/screenshots/settings.png
+
+# Local signing material (never commit)
+packaging/signing/
+
+# Local configuration and signing credentials
+.env
+.env.*
+!.env.example
+*.p12
+*.mobileprovision
+*.pem
+*.key

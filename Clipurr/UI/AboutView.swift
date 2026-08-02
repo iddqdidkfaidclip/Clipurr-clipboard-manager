@@ -1,0 +1,84 @@
+import AppKit
+import SwiftUI
+
+struct AboutView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: ClipurrTheme.Spacing.rowContent) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 72, height: 72)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: ClipurrTheme.Radius.section,
+                            style: .continuous
+                        )
+                    )
+
+                VStack(spacing: 4) {
+                    Text("Clipurr")
+                        .font(.title2.weight(.semibold))
+                    Text(AppVersion.short)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(String(localized: """
+                First local clipboard history for macOS with shoulder-surfing protection.
+                Clip → Purr → Paste
+                """))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, ClipurrTheme.Spacing.settingsOuter)
+            .padding(.top, 28)
+            .padding(.bottom, ClipurrTheme.Spacing.settingsOuter)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.sectionInner) {
+                Text(String(localized: "Shortcuts"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                shortcutRow(
+                    keys: "⇧⌘V",
+                    title: String(localized: "Open History"),
+                    detail: String(localized: "Browse clipboard history and paste")
+                )
+                shortcutRow(
+                    keys: "⇧⌃⌘V",
+                    title: String(localized: "Secure Paste"),
+                    detail: String(localized: "Same history with blurred previews")
+                )
+            }
+            .padding(ClipurrTheme.Spacing.settingsOuter)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(width: 340)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(.regularMaterial)
+    }
+
+    private func shortcutRow(keys: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: ClipurrTheme.Spacing.rowContent) {
+            Text(keys)
+                .font(.system(.callout, design: .rounded).weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+                .frame(width: 72, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout.weight(.medium))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
