@@ -15,8 +15,8 @@ settings:
     CODE_SIGN_STYLE: Automatic
     ENABLE_APP_SANDBOX: NO
     GENERATE_INFOPLIST_FILE: YES
-    CURRENT_PROJECT_VERSION: 1
-    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 5
+    MARKETING_VERSION: 1.0.5
 targets:
   Clipurr:
     type: application

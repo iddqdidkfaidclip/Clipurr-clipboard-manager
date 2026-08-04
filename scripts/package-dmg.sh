@@ -39,7 +39,7 @@ if ! command -v create-dmg >/dev/null 2>&1; then
 fi
 
 VERSION="$(grep -E '^\s*MARKETING_VERSION:' project.yml | awk '{print $2}' | tr -d '"' || true)"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-1.0.5}"
 
 resolve_codesign_identity() {
   if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then

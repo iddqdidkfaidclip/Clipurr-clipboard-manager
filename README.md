@@ -14,7 +14,7 @@ Like <strong>Win + V</strong>, but better — and built for Mac.<br>
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square" alt="Swift 6">
-  <img src="https://img.shields.io/badge/version-1.0.0-0A84FF?style=flat-square" alt="1.0.0">
+  <img src="https://img.shields.io/badge/version-1.0.5-0A84FF?style=flat-square" alt="1.0.5">
 </p>
 
 <p align="center">

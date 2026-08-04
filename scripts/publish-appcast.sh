@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 VERSION="$(grep -E '^\s*MARKETING_VERSION:' project.yml | awk '{print $2}' | tr -d '"' || true)"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-1.0.5}"
 TAG="${GITHUB_REF_NAME:-v${VERSION}}"
 DMG="$ROOT/dist/Clipurr-${VERSION}.dmg"
 DOCS="$ROOT/docs"
