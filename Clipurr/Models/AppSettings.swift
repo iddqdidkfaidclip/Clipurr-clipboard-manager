@@ -173,11 +173,13 @@ enum AppSettings {
     private static let historyClearIntervalKey = "historyClearInterval"
     private static let lastAutomaticHistoryClearKey = "lastAutomaticHistoryClear"
     private static let encryptHistoryKey = "encryptHistory"
+    private static let moveToTopOnPasteKey = "moveToTopOnPaste"
     /// Legacy bool from the old blur toggle — migrated into `hideCopiedContentMode`.
     private static let blurUnfocusedImagesKey = "blurUnfocusedImages"
-    static let defaultHistoryLimit = 10
+    static let defaultHistoryLimit = 30
     static let maxHistoryLimit = 1000
     static let defaultEncryptHistory = true
+    static let defaultMoveToTopOnPaste = false
 
     static var historyLimit: Int {
         get {
@@ -287,6 +289,19 @@ enum AppSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: encryptHistoryKey)
+        }
+    }
+
+    /// When on, pasting from history updates that item’s `createdAt` so it ranks first next open (default off).
+    static var moveToTopOnPaste: Bool {
+        get {
+            guard UserDefaults.standard.object(forKey: moveToTopOnPasteKey) != nil else {
+                return defaultMoveToTopOnPaste
+            }
+            return UserDefaults.standard.bool(forKey: moveToTopOnPasteKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: moveToTopOnPasteKey)
         }
     }
 }

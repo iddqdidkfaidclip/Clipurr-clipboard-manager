@@ -74,34 +74,74 @@ struct HistoryView: View {
         .frame(height: ClipurrTheme.historyHeaderHeight)
     }
 
+    private static let listTopID = "history-list-top"
+    private static let listPadding: CGFloat = 10
+
     private var historyList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: ClipurrTheme.Spacing.rowList) {
-                    ForEach(historyStore.entries, id: \.id) { entry in
-                        Button {
-                            panelState.selectedID = entry.id
-                            onSelect(entry)
-                        } label: {
-                            HistoryRowView(
-                                entry: entry,
-                                isSelected: panelState.selectedID == entry.id,
-                                blurUnfocusedContent: panelState.shouldHideCopiedContent,
-                                relativeTo: panelState.openedAt
-                            )
+                VStack(spacing: 0) {
+                    // Explicit top inset so open/reset can scroll here without eating padding.
+                    Color.clear
+                        .frame(height: Self.listPadding)
+                        .id(Self.listTopID)
+
+                    LazyVStack(spacing: ClipurrTheme.Spacing.rowList) {
+                        entryLoop(entries: historyStore.entries, loop: 0)
+
+                        if historyStore.entries.count > 1 {
+                            HistoryLoopBreakView()
+                                .id("history-loop-break")
+                            entryLoop(entries: historyStore.entries, loop: 1)
                         }
-                        .buttonStyle(.plain)
-                        .id(entry.id)
                     }
+
+                    Color.clear
+                        .frame(height: Self.listPadding)
                 }
-                .padding(10)
+                .padding(.horizontal, Self.listPadding)
             }
-            .onChange(of: panelState.selectedID) { _, selectedID in
-                guard let selectedID else { return }
-                withAnimation(.easeOut(duration: 0.12)) {
-                    proxy.scrollTo(selectedID, anchor: .center)
-                }
+            .onAppear {
+                scrollToListTop(proxy: proxy)
             }
+            .onChange(of: panelState.openedAt) { _, _ in
+                scrollToListTop(proxy: proxy)
+            }
+            .onChange(of: panelState.selectedScrollID) { _, _ in
+                guard panelState.animateSelectionScroll else { return }
+                scrollToSelection(proxy: proxy)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func entryLoop(entries: [ClipboardEntry], loop: Int) -> some View {
+        ForEach(entries, id: \.id) { entry in
+            Button {
+                panelState.select(entry, loop: loop)
+                onSelect(entry)
+            } label: {
+                HistoryRowView(
+                    entry: entry,
+                    isSelected: panelState.selectedID == entry.id
+                        && panelState.selectedLoop == loop,
+                    blurUnfocusedContent: panelState.shouldHideCopiedContent,
+                    relativeTo: panelState.openedAt
+                )
+            }
+            .buttonStyle(.plain)
+            .id(HistoryPanelState.scrollID(loop: loop, entryID: entry.id))
+        }
+    }
+
+    private func scrollToListTop(proxy: ScrollViewProxy) {
+        proxy.scrollTo(Self.listTopID, anchor: .top)
+    }
+
+    private func scrollToSelection(proxy: ScrollViewProxy) {
+        guard let scrollID = panelState.selectedScrollID else { return }
+        withAnimation(.easeOut(duration: 0.12)) {
+            proxy.scrollTo(scrollID, anchor: .center)
         }
     }
 }
@@ -134,6 +174,30 @@ private struct TrafficLightCloseButton: View {
         .help(String(localized: "Close"))
         .onHover { isHovered = $0 }
         .accessibilityLabel(String(localized: "Close"))
+    }
+}
+
+/// Non-focusable break between the last and first items in the looped history list.
+private struct HistoryLoopBreakView: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            loopRule
+            Image(systemName: "circle.fill")
+                .font(.system(size: 3))
+                .foregroundStyle(.tertiary)
+            loopRule
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 6)
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+    }
+
+    private var loopRule: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.10))
+            .frame(height: 1)
+            .frame(maxWidth: .infinity)
     }
 }
 

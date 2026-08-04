@@ -78,6 +78,17 @@ final class HistoryStore {
         return entry
     }
 
+    /// Marks an entry as newest without reordering `entries` (avoids UI jump while the panel is open).
+    func touchCreatedAt(_ entry: ClipboardEntry, at date: Date = .now) {
+        entry.createdAt = date
+        do {
+            try context.save()
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
     func clear() {
         do {
             try context.delete(model: ClipboardEntry.self)

@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var hideCopiedContentMode = AppSettings.hideCopiedContentMode
     @State private var historyClearInterval = AppSettings.historyClearInterval
     @State private var encryptHistory = AppSettings.encryptHistory
+    @State private var moveToTopOnPaste = AppSettings.moveToTopOnPaste
     @State private var historyLimitText = String(AppSettings.historyLimit)
     @State private var launchAtLogin = LaunchAtLoginService.isEnabled
     @State private var accessibilityGranted = AccessibilityService.isTrusted
@@ -34,12 +35,14 @@ struct SettingsView: View {
         .onAppear {
             refreshPermissions()
             encryptHistory = AppSettings.encryptHistory
+            moveToTopOnPaste = AppSettings.moveToTopOnPaste
         }
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
         ) { _ in
             refreshPermissions()
             encryptHistory = AppSettings.encryptHistory
+            moveToTopOnPaste = AppSettings.moveToTopOnPaste
         }
         .alert(
             String(localized: "Couldn’t update Launch at Login"),
@@ -227,6 +230,17 @@ struct SettingsView: View {
             Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
 
             SettingsRow(
+                title: String(localized: "Move to top on paste"),
+                subtitle: String(localized: "Pasted items become newest when you reopen history")
+            ) {
+                Toggle("", isOn: moveToTopOnPasteBinding)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+            }
+
+            Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
+
+            SettingsRow(
                 title: String(localized: "Clear history"),
                 subtitle: String(localized: "Automatically erase clipboard history")
             ) {
@@ -293,6 +307,16 @@ struct SettingsView: View {
             set: { enabled in
                 encryptHistory = enabled
                 historyStore.setEncryptionEnabled(enabled)
+            }
+        )
+    }
+
+    private var moveToTopOnPasteBinding: Binding<Bool> {
+        Binding(
+            get: { moveToTopOnPaste },
+            set: { enabled in
+                moveToTopOnPaste = enabled
+                AppSettings.moveToTopOnPaste = enabled
             }
         )
     }

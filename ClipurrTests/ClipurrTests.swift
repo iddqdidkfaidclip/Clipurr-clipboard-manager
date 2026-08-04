@@ -548,6 +548,16 @@ final class ClipurrTests: XCTestCase {
         }
     }
 
+    func testAppSettingsMoveToTopOnPasteDefaultsOff() {
+        withIsolatedAppSettings {
+            UserDefaults.standard.removeObject(forKey: "moveToTopOnPaste")
+            XCTAssertFalse(AppSettings.moveToTopOnPaste)
+
+            AppSettings.moveToTopOnPaste = true
+            XCTAssertTrue(AppSettings.moveToTopOnPaste)
+        }
+    }
+
     @MainActor
     func testHistoryClearSchedulerNeverAndOnRestart() throws {
         try withIsolatedAppSettings {
@@ -613,18 +623,65 @@ final class ClipurrTests: XCTestCase {
 
         let a = ClipboardEntry(capture: ClipboardPayloadCodec.textCapture("A"))
         let b = ClipboardEntry(capture: ClipboardPayloadCodec.textCapture("B"))
-        let entries = [a, b]
+        let c = ClipboardEntry(capture: ClipboardPayloadCodec.textCapture("C"))
+        let entries = [a, b, c]
         state.selectedID = a.id
+        state.selectedLoop = 0
+
         state.moveSelection(by: 1, entries: entries)
         XCTAssertEqual(state.selectedID, b.id)
-        state.moveSelection(by: 5, entries: entries)
-        XCTAssertEqual(state.selectedID, b.id)
-        state.moveSelection(by: -10, entries: entries)
+        XCTAssertEqual(state.selectedLoop, 0)
+
+        state.moveSelection(by: 1, entries: entries)
+        XCTAssertEqual(state.selectedID, c.id)
+
+        // Past the end → first item after the break.
+        state.moveSelection(by: 1, entries: entries)
         XCTAssertEqual(state.selectedID, a.id)
-        XCTAssertEqual(state.selectedEntry(in: entries)?.id, a.id)
+        XCTAssertEqual(state.selectedLoop, 1)
+
+        // Up across the break → last item before it.
+        state.moveSelection(by: -1, entries: entries)
+        XCTAssertEqual(state.selectedID, c.id)
+        XCTAssertEqual(state.selectedLoop, 0)
+
+        // Up from the first item → last item.
+        state.selectedID = a.id
+        state.selectedLoop = 0
+        state.moveSelection(by: -1, entries: entries)
+        XCTAssertEqual(state.selectedID, c.id)
+        XCTAssertEqual(state.selectedLoop, 0)
 
         state.moveSelection(by: 1, entries: [])
         XCTAssertNil(state.selectedID)
+        XCTAssertEqual(state.selectedLoop, 0)
+    }
+
+    @MainActor
+    func testTouchCreatedAtDoesNotReorderUntilRefresh() throws {
+        let store = try makeStore(limit: 10)
+        store.add(
+            ClipboardPayloadCodec.textCapture("Older"),
+            at: Date(timeIntervalSince1970: 100)
+        )
+        store.add(
+            ClipboardPayloadCodec.textCapture("Newer"),
+            at: Date(timeIntervalSince1970: 200)
+        )
+
+        let older = try XCTUnwrap(store.entries.last)
+        XCTAssertEqual(older.title, "Older")
+        XCTAssertEqual(store.entries.first?.title, "Newer")
+
+        store.touchCreatedAt(older, at: Date(timeIntervalSince1970: 300))
+
+        // In-memory order stays put so the open panel does not jump.
+        XCTAssertEqual(store.entries.map(\.title), ["Newer", "Older"])
+        XCTAssertEqual(older.createdAt, Date(timeIntervalSince1970: 300))
+
+        store.refresh()
+        XCTAssertEqual(store.entries.map(\.title), ["Older", "Newer"])
+        XCTAssertEqual(store.entries.first?.createdAt, Date(timeIntervalSince1970: 300))
     }
 
     @MainActor
@@ -665,6 +722,7 @@ final class ClipurrTests: XCTestCase {
             "historyClearInterval",
             "lastAutomaticHistoryClear",
             "encryptHistory",
+            "moveToTopOnPaste",
             "blurUnfocusedImages",
         ]
         let snapshot = keys.map { ($0, defaults.object(forKey: $0)) }

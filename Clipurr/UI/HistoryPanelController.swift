@@ -104,6 +104,7 @@ final class HistoryPanelController {
             case .failed:
                 panelState.statusMessage = String(localized: "This item is no longer available.")
             default:
+                bumpOnPasteIfNeeded(entry)
                 panelState.statusMessage = String(localized: """
                 Copied only. Enable Accessibility for Clipurr in System Settings \
                 (Privacy & Security → Accessibility), then try again.
@@ -115,12 +116,19 @@ final class HistoryPanelController {
         hide()
         switch await pasteService.paste(entry, into: targetApp) {
         case .pasted:
-            break
+            bumpOnPasteIfNeeded(entry)
         case .copiedOnly:
+            bumpOnPasteIfNeeded(entry)
             presentTransientStatus(String(localized: "Copied to clipboard."))
         case .failed:
             presentTransientStatus(String(localized: "This item is no longer available."))
         }
+    }
+
+    /// Persists a newer `createdAt` without reordering the visible list.
+    private func bumpOnPasteIfNeeded(_ entry: ClipboardEntry) {
+        guard AppSettings.moveToTopOnPaste else { return }
+        historyStore.touchCreatedAt(entry)
     }
 
     private func presentTransientStatus(_ message: String) {
