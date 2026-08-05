@@ -84,12 +84,24 @@ final class AppearanceStore {
                 window.appearance = nil
                 continue
             }
-            window.appearance = appearance
-            if window.styleMask.contains(.titled) {
-                window.isOpaque = true
-                window.backgroundColor = canvas
-            }
+            Self.apply(appearance, canvas: canvas, to: window)
         }
+    }
+
+    /// Apply theme to a window *before* SwiftUI/AppKit controls first lay out,
+    /// so menu pickers don't keep system (e.g. dark) label colors on a light canvas.
+    static func apply(_ appearance: NSAppearance?, canvas: NSColor, to window: NSWindow) {
+        window.appearance = appearance
+        window.contentView?.appearance = appearance
+        window.contentViewController?.view.appearance = appearance
+        if window.styleMask.contains(.titled) {
+            window.isOpaque = true
+            window.backgroundColor = canvas
+        }
+    }
+
+    func apply(to window: NSWindow) {
+        Self.apply(theme.nsAppearance, canvas: NSColor(palette.canvas), to: window)
     }
 
     /// Settings/About (titled) and the floating history panel are themed; menu bar is not.
@@ -109,6 +121,10 @@ struct ThemePalette {
     let control: Color
     /// Hairline borders (GitHub `borderColor-default`).
     let border: Color
+    /// Primary control / row label — absolute, not system `.primary`.
+    let label: Color
+    /// Secondary / caption label — absolute, not system `.secondary`.
+    let secondaryLabel: Color
 }
 
 enum ClipurrTheme {
@@ -193,21 +209,27 @@ extension AppearanceTheme {
                 canvas: Color(hex: 0x0D1117),
                 elevated: Color(hex: 0x161B22),
                 control: Color(hex: 0x21262D),
-                border: Color(hex: 0x30363D)
+                border: Color(hex: 0x30363D),
+                label: Color(hex: 0xE6EDF3),
+                secondaryLabel: Color(hex: 0x8B949E)
             )
         case .softBlack:
             ThemePalette(
                 canvas: Color(hex: 0x22272E),
                 elevated: Color(hex: 0x2D333B),
                 control: Color(hex: 0x373E47),
-                border: Color(hex: 0x444C56)
+                border: Color(hex: 0x444C56),
+                label: Color(hex: 0xADBAC7),
+                secondaryLabel: Color(hex: 0x768390)
             )
         case .light:
             ThemePalette(
                 canvas: Color(hex: 0xFFFFFF),
                 elevated: Color(hex: 0xF6F8FA),
                 control: Color(hex: 0xFFFFFF),
-                border: Color(hex: 0xD0D7DE)
+                border: Color(hex: 0xD0D7DE),
+                label: Color(hex: 0x1F2328),
+                secondaryLabel: Color(hex: 0x656D76)
             )
         }
     }
@@ -259,6 +281,14 @@ extension View {
     func clipurrAppearance(_ appearance: AppearanceStore) -> some View {
         preferredColorScheme(appearance.colorScheme)
             .tint(appearance.accentColor)
+    }
+
+    /// Forces settings menu/text controls to use theme labels so AppKit pickers
+    /// stay readable even if window appearance lags the first layout pass.
+    @MainActor
+    func settingsControlLabel(_ appearance: AppearanceStore) -> some View {
+        foregroundStyle(appearance.palette.label)
+            .environment(\.colorScheme, appearance.colorScheme)
     }
 }
 

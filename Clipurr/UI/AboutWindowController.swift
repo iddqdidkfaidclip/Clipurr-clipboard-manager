@@ -8,24 +8,32 @@ final class AboutWindowController {
 
     func show() {
         if window == nil {
-            let hostingController = NSHostingController(rootView: AboutView())
-            hostingController.sizingOptions = [.intrinsicContentSize]
-            self.hostingController = hostingController
-
-            let aboutWindow = NSWindow(contentViewController: hostingController)
+            let aboutWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 340, height: 280),
+                styleMask: [.titled, .closable, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
             aboutWindow.title = String(localized: "About Clipurr")
-            aboutWindow.styleMask = [.titled, .closable, .fullSizeContentView]
             aboutWindow.titlebarAppearsTransparent = true
             aboutWindow.titleVisibility = .hidden
             aboutWindow.isReleasedWhenClosed = false
             aboutWindow.isMovableByWindowBackground = true
+            AppearanceStore.shared.apply(to: aboutWindow)
+
+            let hostingController = NSHostingController(rootView: AboutView())
+            hostingController.sizingOptions = [.intrinsicContentSize]
+            hostingController.view.appearance = AppearanceStore.shared.theme.nsAppearance
+            self.hostingController = hostingController
+
+            aboutWindow.contentViewController = hostingController
             fitContent(in: aboutWindow, hostingController: hostingController)
             aboutWindow.center()
-            AppearanceStore.shared.applyToOpenWindows()
             window = aboutWindow
         } else if let window, let hostingController {
+            AppearanceStore.shared.apply(to: window)
+            hostingController.view.appearance = AppearanceStore.shared.theme.nsAppearance
             fitContent(in: window, hostingController: hostingController)
-            AppearanceStore.shared.applyToOpenWindows()
         }
 
         NSApp.activate(ignoringOtherApps: true)

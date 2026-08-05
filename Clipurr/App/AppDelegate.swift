@@ -98,7 +98,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 accessibilityDescription: "Clipurr"
             )
         menuBarImage?.isTemplate = true
+        // Asset catalog points are 18×18; pin size so Retina templates aren't
+        // drawn oversized and optically squashed in the status item.
+        menuBarImage?.size = NSSize(width: 18, height: 18)
         statusItem.button?.image = menuBarImage
+        statusItem.button?.imagePosition = .imageOnly
 
         let menu = NSMenu()
         menu.addItem(

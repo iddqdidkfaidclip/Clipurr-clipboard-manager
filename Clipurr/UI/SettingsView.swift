@@ -19,7 +19,9 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
 
 struct SettingsView: View {
     let historyStore: HistoryStore
-    var onContentChange: (() -> Void)? = nil
+    /// Called when intrinsic content height should drive the window frame.
+    /// `animated` softens tab switches; theme changes can stay snappier.
+    var onContentChange: ((_ animated: Bool) -> Void)? = nil
 
     @State private var selectedTab: SettingsTab = .general
     @State private var preferredLanguage = AppSettings.preferredLanguage
@@ -39,35 +41,38 @@ struct SettingsView: View {
     @State private var isPickingCustomAccent = false
     @FocusState private var isHistoryLimitFocused: Bool
 
+    private static let tabAnimation = Animation.easeInOut(duration: 0.28)
+
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
 
-            Picker("", selection: $selectedTab) {
+            Picker("", selection: selectedTabBinding) {
                 ForEach(SettingsTab.allCases) { tab in
                     Text(tab.title).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .environment(\.colorScheme, appearance.colorScheme)
             .padding(.horizontal, ClipurrTheme.Spacing.settingsOuter)
             .padding(.top, ClipurrTheme.Spacing.settingsOuter)
             .padding(.bottom, ClipurrTheme.Spacing.sectionInner)
 
-            Group {
-                switch selectedTab {
-                case .general:
-                    VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.settingsSections) {
-                        generalSection
-                        permissionsSection
-                    }
-                case .history:
-                    historySection
-                case .appearance:
-                    appearanceSection
-                }
+            // Only the settings body crossfades — header + tabs stay put.
+            ZStack(alignment: .top) {
+                tabBody
+                    .id(selectedTab)
+                    .transition(
+                        .asymmetric(
+                            insertion: .opacity.combined(with: .offset(y: 5)),
+                            removal: .opacity
+                        )
+                    )
             }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .clipped()
             .padding(.horizontal, ClipurrTheme.Spacing.settingsOuter)
             .padding(.bottom, ClipurrTheme.Spacing.settingsOuter)
         }
@@ -84,7 +89,7 @@ struct SettingsView: View {
             appearance.applyToOpenWindows()
         }
         .onChange(of: selectedTab) { _, _ in
-            requestContentRefit()
+            requestContentRefit(animated: true)
         }
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
@@ -122,9 +127,37 @@ struct SettingsView: View {
         }
     }
 
-    private func requestContentRefit() {
+    private func requestContentRefit(animated: Bool = false) {
+        // Wait one turn so SwiftUI commits the new tab’s intrinsic size first.
         DispatchQueue.main.async {
-            onContentChange?()
+            onContentChange?(animated)
+        }
+    }
+
+    private var selectedTabBinding: Binding<SettingsTab> {
+        Binding(
+            get: { selectedTab },
+            set: { tab in
+                guard tab != selectedTab else { return }
+                withAnimation(Self.tabAnimation) {
+                    selectedTab = tab
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var tabBody: some View {
+        switch selectedTab {
+        case .general:
+            VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.settingsSections) {
+                generalSection
+                permissionsSection
+            }
+        case .history:
+            historySection
+        case .appearance:
+            appearanceSection
         }
     }
 
@@ -143,13 +176,14 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(localized: "Settings"))
                     .font(.title3.weight(.semibold))
+                    .foregroundStyle(appearance.palette.label)
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("Clipurr")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(appearance.palette.secondaryLabel)
                     Text(AppVersion.short)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(appearance.palette.secondaryLabel.opacity(0.85))
                 }
             }
 
@@ -157,7 +191,7 @@ struct SettingsView: View {
 
             Text(verbatim: "Clip → Purr → Paste")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(appearance.palette.secondaryLabel)
                 .multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, ClipurrTheme.Spacing.settingsOuter)
@@ -170,13 +204,14 @@ struct SettingsView: View {
                 title: String(localized: "Language"),
                 subtitle: String(localized: "Interface language")
             ) {
-                Picker("", selection: $preferredLanguage) {
+                SettingsMenuPicker(
+                    selection: $preferredLanguage,
+                    title: preferredLanguage.displayName
+                ) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(language.displayName).tag(language)
                     }
                 }
-                .labelsHidden()
-                .fixedSize()
                 .onChange(of: preferredLanguage) { _, language in
                     AppSettings.preferredLanguage = language
                     Localization.applyPreferredLanguage()
@@ -218,6 +253,7 @@ struct SettingsView: View {
                     .labelsHidden()
                     .textFieldStyle(.plain)
                     .multilineTextAlignment(.trailing)
+                    .foregroundStyle(appearance.palette.label)
                     .frame(width: 52)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
@@ -237,6 +273,7 @@ struct SettingsView: View {
                     }
                     .focusEffectDisabled()
                     .focused($isHistoryLimitFocused)
+                    .environment(\.colorScheme, appearance.colorScheme)
                     .onChange(of: historyLimitText) { _, newValue in
                         sanitizeHistoryLimitText(newValue)
                     }
@@ -261,13 +298,14 @@ struct SettingsView: View {
                     : nil,
                 alignment: .top
             ) {
-                Picker("", selection: $historyContentMode.animation(.easeInOut(duration: 0.22))) {
+                SettingsMenuPicker(
+                    selection: $historyContentMode.animation(.easeInOut(duration: 0.22)),
+                    title: historyContentMode.displayName
+                ) {
                     ForEach(HistoryContentMode.allCases) { mode in
                         Text(mode.displayName).tag(mode)
                     }
                 }
-                .labelsHidden()
-                .fixedSize()
                 .onChange(of: historyContentMode) { _, mode in
                     applyHistoryContentMode(mode)
                 }
@@ -301,13 +339,14 @@ struct SettingsView: View {
                 title: String(localized: "Clear history"),
                 subtitle: String(localized: "Automatically erase clipboard history")
             ) {
-                Picker("", selection: $historyClearInterval) {
+                SettingsMenuPicker(
+                    selection: $historyClearInterval,
+                    title: historyClearInterval.displayName
+                ) {
                     ForEach(HistoryClearInterval.allCases) { interval in
                         Text(interval.displayName).tag(interval)
                     }
                 }
-                .labelsHidden()
-                .fixedSize()
                 .onChange(of: historyClearInterval) { _, interval in
                     AppSettings.historyClearInterval = interval
                 }
@@ -335,13 +374,14 @@ struct SettingsView: View {
                     title: String(localized: "Appearance"),
                     subtitle: String(localized: "Black, soft black, or light window surfaces")
                 ) {
-                    Picker("", selection: themeBinding) {
+                    SettingsMenuPicker(
+                        selection: themeBinding,
+                        title: appearance.theme.displayName
+                    ) {
                         ForEach(AppearanceTheme.allCases) { theme in
                             Text(theme.displayName).tag(theme)
                         }
                     }
-                    .labelsHidden()
-                    .fixedSize()
                 }
             }
 
@@ -360,13 +400,14 @@ struct SettingsView: View {
                     title: String(localized: "Panel size"),
                     subtitle: String(localized: "History window size")
                 ) {
-                    Picker("", selection: $panelSize) {
+                    SettingsMenuPicker(
+                        selection: $panelSize,
+                        title: panelSize.displayName
+                    ) {
                         ForEach(PanelSize.allCases) { size in
                             Text(size.displayName).tag(size)
                         }
                     }
-                    .labelsHidden()
-                    .fixedSize()
                     .onChange(of: panelSize) { _, size in
                         AppSettings.panelSize = size
                     }
@@ -378,14 +419,14 @@ struct SettingsView: View {
                     title: String(localized: "Stick to"),
                     subtitle: String(localized: "Where the history window appears")
                 ) {
-                    Picker("", selection: panelAnchorBinding) {
+                    SettingsMenuPicker(
+                        selection: panelAnchorBinding,
+                        title: panelAnchor.displayName
+                    ) {
                         ForEach(PanelAnchor.allCases) { anchor in
-                            Text(anchor.displayName)
-                                .tag(anchor)
+                            Text(anchor.displayName).tag(anchor)
                         }
                     }
-                    .labelsHidden()
-                    .fixedSize()
                 }
 
                 Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
@@ -394,13 +435,14 @@ struct SettingsView: View {
                     title: String(localized: "Background effect"),
                     subtitle: String(localized: "Blur or glass behind the history panel")
                 ) {
-                    Picker("", selection: backgroundEffectBinding) {
+                    SettingsMenuPicker(
+                        selection: backgroundEffectBinding,
+                        title: appearance.backgroundEffect.displayName
+                    ) {
                         ForEach(HistoryBackgroundEffect.allCases) { effect in
                             Text(effect.displayName).tag(effect)
                         }
                     }
-                    .labelsHidden()
-                    .fixedSize()
                 }
 
                 Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
@@ -420,7 +462,7 @@ struct SettingsView: View {
                         .focusEffectDisabled()
                         Text("\(appearance.backgroundOpacity)%")
                             .font(.caption.monospacedDigit().weight(.medium))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(appearance.palette.secondaryLabel)
                             .frame(width: 36, alignment: .trailing)
                     }
                 }
@@ -536,7 +578,7 @@ struct SettingsView: View {
             get: { appearance.theme },
             set: { newValue in
                 appearance.setTheme(newValue)
-                requestContentRefit()
+                requestContentRefit(animated: true)
             }
         )
     }

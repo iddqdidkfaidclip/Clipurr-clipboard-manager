@@ -20,14 +20,16 @@ struct AboutView: View {
                 VStack(spacing: 8) {
                     Text("Clipurr")
                         .font(.title2.weight(.semibold))
+                        .foregroundStyle(appearance.palette.label)
                     Text(AppVersion.short)
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(appearance.palette.secondaryLabel)
                     Button(String(localized: "Check for Updates…")) {
                         UpdateService.shared.checkForUpdates(nil)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .settingsControlLabel(appearance)
                 }
 
                 Text(String(localized: """
@@ -35,7 +37,7 @@ struct AboutView: View {
                 Clip → Purr → Paste
                 """))
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(appearance.palette.secondaryLabel)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -49,7 +51,7 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.sectionInner) {
                 Text(String(localized: "Shortcuts"))
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(appearance.palette.secondaryLabel)
 
                 shortcutRow(
                     keys: "⇧⌘V",
@@ -76,15 +78,16 @@ struct AboutView: View {
             Text(keys)
                 .font(.system(.callout, design: .rounded).weight(.semibold))
                 .monospacedDigit()
-                .foregroundStyle(.primary)
+                .foregroundStyle(appearance.palette.label)
                 .frame(width: 72, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.callout.weight(.medium))
+                    .foregroundStyle(appearance.palette.label)
                 Text(detail)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(appearance.palette.secondaryLabel)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

@@ -23,10 +23,12 @@ APP_ICON_SIZES = {
 
 MAC_ICON_CORNER_FRACTION = 0.2237
 CONTINUOUS_CORNER_FACTOR = 0.611335116483066
-MENU_BAR_FILL = 0.98
+# Fit the flat logo's native proportions into the status-item square.
+MENU_BAR_FILL = 0.94
 MENU_BAR_LUMINANCE_THRESHOLD = 90
 MENU_BAR_LUMINANCE_SOFT = 70
-MENU_BAR_FLAT_LUMINANCE_THRESHOLD = 248
+# Ignore only sensor/noise blacks; every white shade maps 1:1 into alpha.
+MENU_BAR_FLAT_NOISE_FLOOR = 8
 
 
 def _sample_background_color(image: Image.Image) -> tuple[int, int, int]:
@@ -194,64 +196,131 @@ def extract_menu_bar_silhouette_from_photo(source: Image.Image) -> Image.Image:
 
 
 def extract_menu_bar_silhouette_from_flat_asset(source: Image.Image) -> Image.Image:
-    """Keep only light pixels as the template.
+    """Copy white + white shades 1:1 into alpha. No redrawing, no remapping.
 
-    Black regions (document fill, eyes, mouth, background) stay transparent so
-    the menu-bar icon is an outline + face cutouts, not a solid blob.
+    Black (background, document fill, eyes, mouth) → 0.
+    Every other luminance value becomes the template alpha as-is.
     """
     rgba = source.convert("RGBA")
     alpha = rgba.getchannel("A")
     transparent_pixels = sum(1 for value in alpha.getdata() if value < 240)
     if transparent_pixels > rgba.width * rgba.height * 0.01:
-        # Already a white-on-transparent template: trust alpha as-is so document
-        # holes and face cutouts survive (do not flatten/threshold them shut).
+        # Already white-on-transparent: trust alpha shades exactly.
         return _finalize_menu_bar_mask(alpha, close_gaps=False)
 
     pixels = rgba.load()
     width, height = rgba.size
-    # Soft white extraction from black-background flat art.
-    hard = max(180, MENU_BAR_FLAT_LUMINANCE_THRESHOLD - 60)
-    soft = hard - 40
     mask = Image.new("L", (width, height), 0)
     mask_pixels = mask.load()
 
     for y in range(height):
         for x in range(width):
             red, green, blue, _alpha = pixels[x, y]
-            luminance = _luminance(red, green, blue)
-            if luminance >= hard:
-                mask_pixels[x, y] = 255
-            elif luminance >= soft:
-                mask_pixels[x, y] = int((luminance - soft) / (hard - soft) * 255)
+            luminance = int(round(_luminance(red, green, blue)))
+            if luminance <= MENU_BAR_FLAT_NOISE_FLOOR:
+                mask_pixels[x, y] = 0
+            else:
+                mask_pixels[x, y] = luminance
 
-    return _finalize_menu_bar_mask(mask)
+    return _finalize_menu_bar_mask(mask, close_gaps=False)
 
 
-def generate_menu_icon(source: Path, destination: Path, *, flat_asset: bool) -> None:
-    image = Image.open(source)
-    if flat_asset:
-        silhouette = extract_menu_bar_silhouette_from_flat_asset(image)
-    else:
-        silhouette = extract_menu_bar_silhouette_from_photo(image)
+def build_outline_menu_bar_glyph(canvas_size: int) -> Image.Image:
+    """Filled Clipurr cat like the first release icon — square body, big eye cutouts.
+
+    Solid silhouette + transparent eyes/mouth (classic menu-bar template).
+    """
+    oversample = 8
+    size = canvas_size * oversample
+    s = size / 36.0
+
+    def p(x: float, y: float) -> tuple[int, int]:
+        return round(x * s), round(y * s)
+
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+
+    # Tail first — solid filled hook like the first-release icon.
+    tail_w = max(oversample * 2, round(3.2 * oversample))
+    draw.line(
+        [p(26.8, 19.5), p(31.5, 18.0), p(33.5, 22.8), p(32.0, 28.0), p(27.5, 29.0)],
+        fill=255,
+        width=tail_w,
+        joint="curve",
+    )
+    # Cap the tip so it reads solid, not a stroked ring.
+    tip = p(32.8, 25.5)
+    tip_r = round(1.4 * s)
+    draw.ellipse(
+        [(tip[0] - tip_r, tip[1] - tip_r), (tip[0] + tip_r, tip[1] + tip_r)],
+        fill=255,
+    )
+
+    # Square body — equal width/height, mild corner radius.
+    draw.rounded_rectangle(
+        [p(5.0, 9.0), p(28.0, 32.0)],
+        radius=round(2.4 * s),
+        fill=255,
+    )
+
+    # Ears
+    draw.polygon([p(5.5, 10.0), p(8.8, 2.5), p(12.4, 10.0)], fill=255)
+    draw.polygon([p(20.6, 10.0), p(24.2, 2.5), p(27.5, 10.0)], fill=255)
+
+    # Strong eye cutouts
+    eye_r = round(3.6 * s)
+    for cx in (11.4, 21.6):
+        c = p(cx, 18.0)
+        draw.ellipse(
+            [(c[0] - eye_r, c[1] - eye_r), (c[0] + eye_r, c[1] + eye_r)],
+            fill=0,
+        )
+
+    # Mouth cutout — logo "w"
+    mouth_w = max(oversample + 1, round(2.1 * oversample))
+    draw.line(
+        [p(13.2, 24.2), p(15.2, 27.4), p(17.2, 24.6), p(19.2, 27.4), p(21.2, 24.2)],
+        fill=0,
+        width=mouth_w,
+        joint="curve",
+    )
+
+    icon = mask.resize((canvas_size, canvas_size), Image.Resampling.LANCZOS)
+    # Keep the silhouette solid; only kill soft fringe.
+    icon = icon.point(lambda value: 0 if value < 48 else 255)
+    return icon
+
+
+def generate_menu_icon(
+    source: Path,
+    destination: Path,
+    *,
+    flat_asset: bool,
+    simplified: bool = False,
+) -> None:
     destination.mkdir(parents=True, exist_ok=True)
 
     for filename, canvas_size in (
         ("menubar-template.png", 18),
         ("menubar-template@2x.png", 36),
     ):
-        content_size = int(canvas_size * MENU_BAR_FILL)
-        icon = silhouette.copy()
-        icon.thumbnail((content_size, content_size), Image.Resampling.LANCZOS)
-        # Keep thin document strokes and face holes crisp at menu-bar sizes.
-        icon = icon.filter(ImageFilter.UnsharpMask(radius=0.6, percent=160, threshold=1))
-        icon = icon.point(lambda value: 0 if value < 90 else (255 if value > 160 else value))
-
-        canvas = Image.new("L", (canvas_size, canvas_size), 0)
-        origin = (
-            (canvas_size - icon.width) // 2,
-            (canvas_size - icon.height) // 2,
-        )
-        canvas.paste(icon, origin)
+        if simplified:
+            canvas = build_outline_menu_bar_glyph(canvas_size)
+        else:
+            image = Image.open(source)
+            if flat_asset:
+                silhouette = extract_menu_bar_silhouette_from_flat_asset(image)
+            else:
+                silhouette = extract_menu_bar_silhouette_from_photo(image)
+            content_size = int(canvas_size * MENU_BAR_FILL)
+            icon = silhouette.copy()
+            # Keep source aspect ratio — never stretch.
+            icon.thumbnail((content_size, content_size), Image.Resampling.LANCZOS)
+            canvas = Image.new("L", (canvas_size, canvas_size), 0)
+            canvas.paste(
+                icon,
+                ((canvas_size - icon.width) // 2, (canvas_size - icon.height) // 2),
+            )
 
         output = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
         output.putalpha(canvas)
@@ -262,6 +331,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--menu-bar-source", type=Path)
+    parser.add_argument("--simplified-menu-bar", action="store_true")
     parser.add_argument("--asset-catalog", type=Path, required=True)
     parser.add_argument("--docs-out", type=Path)
     arguments = parser.parse_args()
@@ -274,6 +344,7 @@ def main() -> None:
         menu_bar_source,
         arguments.asset_catalog / "MenuBarIcon.imageset",
         flat_asset=arguments.menu_bar_source is not None,
+        simplified=arguments.simplified_menu_bar,
     )
 
     if arguments.docs_out:
