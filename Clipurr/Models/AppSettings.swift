@@ -79,6 +79,38 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     }
 }
 
+enum PanelSize: String, CaseIterable, Identifiable {
+    case extraSmall
+    case small
+    case medium
+    case large
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .extraSmall: String(localized: "Extra Small")
+        case .small: String(localized: "Small")
+        case .medium: String(localized: "Medium")
+        case .large: String(localized: "Large")
+        }
+    }
+}
+
+enum PanelAnchor: String, CaseIterable, Identifiable {
+    case center
+    case mouse
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .center: String(localized: "Center")
+        case .mouse: String(localized: "Mouse cursor")
+        }
+    }
+}
+
 enum HistoryContentMode: String, CaseIterable, Identifiable {
     case textOnly
     case textAndImages
@@ -164,6 +196,74 @@ enum HistoryClearInterval: String, CaseIterable, Identifiable {
     }
 }
 
+/// Accent used for selection rings, panel borders, and highlights.
+enum AccentColorChoice: String, CaseIterable, Identifiable {
+    case blue
+    case pink
+    case purple
+    case green
+    case orange
+    case teal
+    case red
+    case yellow
+    case custom
+
+    var id: String { rawValue }
+
+    /// Built-in swatches (excludes the custom color-wheel entry).
+    static var presets: [AccentColorChoice] {
+        allCases.filter { $0 != .custom }
+    }
+
+    var displayName: String {
+        switch self {
+        case .blue: String(localized: "Blue")
+        case .pink: String(localized: "Pink")
+        case .purple: String(localized: "Purple")
+        case .green: String(localized: "Green")
+        case .orange: String(localized: "Orange")
+        case .teal: String(localized: "Teal")
+        case .red: String(localized: "Red")
+        case .yellow: String(localized: "Yellow")
+        case .custom: String(localized: "Custom")
+        }
+    }
+}
+
+/// Window chrome themes (dark / soft dark / light).
+enum AppearanceTheme: String, CaseIterable, Identifiable {
+    case black
+    case softBlack
+    case light
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .black: String(localized: "Black")
+        case .softBlack: String(localized: "Soft Black")
+        case .light: String(localized: "Light")
+        }
+    }
+}
+
+/// Backdrop treatment for the history panel only.
+enum HistoryBackgroundEffect: String, CaseIterable, Identifiable {
+    case blur
+    case glass
+    case none
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .blur: String(localized: "Blur")
+        case .glass: String(localized: "Glass")
+        case .none: String(localized: "None")
+        }
+    }
+}
+
 enum AppSettings {
     private static let historyLimitKey = "historyLimit"
     private static let didAskLaunchAtLoginKey = "didAskLaunchAtLogin"
@@ -174,12 +274,30 @@ enum AppSettings {
     private static let lastAutomaticHistoryClearKey = "lastAutomaticHistoryClear"
     private static let encryptHistoryKey = "encryptHistory"
     private static let moveToTopOnPasteKey = "moveToTopOnPaste"
+    private static let panelSizeKey = "panelSize"
+    private static let panelAnchorKey = "panelAnchor"
+    private static let accentColorKey = "accentColor"
+    private static let customAccentHexKey = "customAccentHex"
+    private static let appearanceThemeKey = "appearanceTheme"
+    private static let backgroundOpacityKey = "backgroundOpacity"
+    private static let backgroundEffectKey = "backgroundEffect"
     /// Legacy bool from the old blur toggle — migrated into `hideCopiedContentMode`.
     private static let blurUnfocusedImagesKey = "blurUnfocusedImages"
     static let defaultHistoryLimit = 30
     static let maxHistoryLimit = 1000
     static let defaultEncryptHistory = true
     static let defaultMoveToTopOnPaste = false
+    static let defaultPanelSize: PanelSize = .large
+    static let defaultPanelAnchor: PanelAnchor = .center
+    static let defaultAccentColor: AccentColorChoice = .blue
+    /// Soft blue matching the built-in blue swatch (`#58A6FF`) for the color-wheel seed.
+    static let defaultCustomAccentHex: UInt32 = 0x58A6FF
+    static let defaultAppearanceTheme: AppearanceTheme = .softBlack
+    static let defaultBackgroundEffect: HistoryBackgroundEffect = .glass
+    /// History panel tint opacity percent (1…100).
+    static let defaultBackgroundOpacity = 75
+    static let minBackgroundOpacity = 1
+    static let maxBackgroundOpacity = 100
 
     static var historyLimit: Int {
         get {
@@ -302,6 +420,89 @@ enum AppSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: moveToTopOnPasteKey)
+        }
+    }
+
+    static var panelSize: PanelSize {
+        get {
+            let raw = UserDefaults.standard.string(forKey: panelSizeKey) ?? ""
+            return PanelSize(rawValue: raw) ?? defaultPanelSize
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: panelSizeKey)
+        }
+    }
+
+    static var panelAnchor: PanelAnchor {
+        get {
+            let raw = UserDefaults.standard.string(forKey: panelAnchorKey) ?? ""
+            // Migrate removed "inputField" / text-cursor option → center.
+            if raw == "inputField" {
+                UserDefaults.standard.set(PanelAnchor.center.rawValue, forKey: panelAnchorKey)
+                return .center
+            }
+            return PanelAnchor(rawValue: raw) ?? defaultPanelAnchor
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: panelAnchorKey)
+        }
+    }
+
+    static var accentColor: AccentColorChoice {
+        get {
+            let raw = UserDefaults.standard.string(forKey: accentColorKey) ?? ""
+            return AccentColorChoice(rawValue: raw) ?? defaultAccentColor
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: accentColorKey)
+        }
+    }
+
+    /// sRGB hex (`0xRRGGBB`) for `AccentColorChoice.custom`.
+    static var customAccentHex: UInt32 {
+        get {
+            guard UserDefaults.standard.object(forKey: customAccentHexKey) != nil else {
+                return defaultCustomAccentHex
+            }
+            return UInt32(UserDefaults.standard.integer(forKey: customAccentHexKey))
+        }
+        set {
+            UserDefaults.standard.set(Int(newValue), forKey: customAccentHexKey)
+        }
+    }
+
+    static var appearanceTheme: AppearanceTheme {
+        get {
+            let raw = UserDefaults.standard.string(forKey: appearanceThemeKey) ?? ""
+            return AppearanceTheme(rawValue: raw) ?? defaultAppearanceTheme
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: appearanceThemeKey)
+        }
+    }
+
+    /// History panel tint opacity as a percent (1…100). Default 75.
+    static var backgroundOpacity: Int {
+        get {
+            guard UserDefaults.standard.object(forKey: backgroundOpacityKey) != nil else {
+                return defaultBackgroundOpacity
+            }
+            let stored = UserDefaults.standard.integer(forKey: backgroundOpacityKey)
+            return min(max(stored, minBackgroundOpacity), maxBackgroundOpacity)
+        }
+        set {
+            let clamped = min(max(newValue, minBackgroundOpacity), maxBackgroundOpacity)
+            UserDefaults.standard.set(clamped, forKey: backgroundOpacityKey)
+        }
+    }
+
+    static var backgroundEffect: HistoryBackgroundEffect {
+        get {
+            let raw = UserDefaults.standard.string(forKey: backgroundEffectKey) ?? ""
+            return HistoryBackgroundEffect(rawValue: raw) ?? defaultBackgroundEffect
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: backgroundEffectKey)
         }
     }
 }

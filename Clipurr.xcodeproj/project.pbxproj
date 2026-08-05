@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		07B48611A002BE811F9CEAC5 /* CircularHistoryWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95E0069E46AD43D602EFF61 /* CircularHistoryWindow.swift */; };
 		1386233ED8B33FA7A94FE944 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E5890F737AF432D8112BA756 /* Assets.xcassets */; };
 		1496815E80161B0AA82914C7 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8CFD8D59E22154FA0C4875D /* HotKeyManager.swift */; };
 		176C443B41EBB0474D36FFFE /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546DDFB3052307A1D87D3B40 /* AppVersion.swift */; };
@@ -84,6 +85,7 @@
 		D9957FC09EE9FF8BC43C5E9C /* HistoryPanelState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryPanelState.swift; sourceTree = "<group>"; };
 		E5890F737AF432D8112BA756 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E8F57BAEECCAE3BC9784933F /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
+		E95E0069E46AD43D602EFF61 /* CircularHistoryWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularHistoryWindow.swift; sourceTree = "<group>"; };
 		F4BCF321AC89CFB2A281C521 /* LaunchAtLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -200,6 +202,7 @@
 			children = (
 				2AD9C296535FD0618D9A060F /* AboutView.swift */,
 				94FB6229FBEEA52E97566C85 /* AboutWindowController.swift */,
+				E95E0069E46AD43D602EFF61 /* CircularHistoryWindow.swift */,
 				9C51DB1A6E62BD618B2CB89D /* ClipurrTheme.swift */,
 				9C9F0072B6A836D133ADCCE3 /* HistoryPanelController.swift */,
 				D9957FC09EE9FF8BC43C5E9C /* HistoryPanelState.swift */,
@@ -354,6 +357,7 @@
 				AB27703316E407B2678BC2FC /* AppDelegate.swift in Sources */,
 				5C1F69DA29F63D95A0B851EE /* AppSettings.swift in Sources */,
 				176C443B41EBB0474D36FFFE /* AppVersion.swift in Sources */,
+				07B48611A002BE811F9CEAC5 /* CircularHistoryWindow.swift in Sources */,
 				F4E0655A537134A707016760 /* ClipboardEntry.swift in Sources */,
 				E0CD29BE4477E3DD896ABC42 /* ClipboardMonitor.swift in Sources */,
 				E6AD79D3280A93F589CA5528 /* ClipboardPayloadCodec.swift in Sources */,
@@ -423,7 +427,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -444,7 +448,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -491,7 +495,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -506,7 +510,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

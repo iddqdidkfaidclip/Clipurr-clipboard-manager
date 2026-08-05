@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Localization.applyPreferredLanguage()
         NSApp.setActivationPolicy(.accessory)
-        // Start Sparkle before building the menu so Check for Updates is live.
+        // Start Sparkle early so automatic update checks are live.
         _ = UpdateService.shared
         configureServices()
         configureStatusItem()
@@ -52,17 +52,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         historyStore = HistoryStore(container: modelContainer)
         clipboardMonitor = ClipboardMonitor(historyStore: historyStore)
         pasteService = PasteService(monitor: clipboardMonitor)
-        panelController = HistoryPanelController(
-            historyStore: historyStore,
-            pasteService: pasteService
-        )
         settingsWindowController = SettingsWindowController(historyStore: historyStore)
         aboutWindowController = AboutWindowController()
+        panelController = HistoryPanelController(
+            historyStore: historyStore,
+            pasteService: pasteService,
+            onOpenSettings: { [weak self] in
+                self?.settingsWindowController.show()
+            }
+        )
         historyClearScheduler = HistoryClearScheduler(historyStore: historyStore) { [weak self] in
             self?.panelController.hide()
         }
         // Persist any legacy blur-toggle migration before views read AppStorage.
         _ = AppSettings.hideCopiedContentMode
+        AppearanceStore.shared.applyToOpenWindows()
     }
 
     private func configureHotKey() {
@@ -104,22 +108,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ).target = self
         menu.addItem(.separator())
 
-        let pasteHint = NSMenuItem(
-            title: String(localized: "Paste: ⇧⌘V"),
-            action: nil,
-            keyEquivalent: ""
-        )
-        pasteHint.isEnabled = false
-        menu.addItem(pasteHint)
-
-        let securePasteHint = NSMenuItem(
-            title: String(localized: "Paste Secretly: ⇧⌃⌘V"),
-            action: nil,
-            keyEquivalent: ""
-        )
-        securePasteHint.isEnabled = false
-        menu.addItem(securePasteHint)
-
         let openHistoryItem = NSMenuItem(
             title: String(localized: "Open History"),
             action: #selector(openHistory),
@@ -145,17 +133,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(clearHistoryItem)
         menu.addItem(.separator())
 
-        let checkUpdatesItem = NSMenuItem(
-            title: String(localized: "Check for Updates…"),
-            action: #selector(UpdateService.checkForUpdates(_:)),
+        let pasteHint = NSMenuItem(
+            title: String(localized: "Paste: ⇧⌘V"),
+            action: nil,
             keyEquivalent: ""
         )
-        checkUpdatesItem.target = UpdateService.shared
-        checkUpdatesItem.image = NSImage(
-            systemSymbolName: "arrow.triangle.2.circlepath",
-            accessibilityDescription: String(localized: "Check for Updates…")
+        pasteHint.isEnabled = false
+        menu.addItem(pasteHint)
+
+        let securePasteHint = NSMenuItem(
+            title: String(localized: "Paste Secretly: ⇧⌃⌘V"),
+            action: nil,
+            keyEquivalent: ""
         )
-        menu.addItem(checkUpdatesItem)
+        securePasteHint.isEnabled = false
+        menu.addItem(securePasteHint)
         menu.addItem(.separator())
 
         menu.addItem(

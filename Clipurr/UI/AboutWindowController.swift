@@ -21,9 +21,11 @@ final class AboutWindowController {
             aboutWindow.isMovableByWindowBackground = true
             fitContent(in: aboutWindow, hostingController: hostingController)
             aboutWindow.center()
+            AppearanceStore.shared.applyToOpenWindows()
             window = aboutWindow
         } else if let window, let hostingController {
             fitContent(in: window, hostingController: hostingController)
+            AppearanceStore.shared.applyToOpenWindows()
         }
 
         NSApp.activate(ignoringOtherApps: true)

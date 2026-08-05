@@ -5,8 +5,8 @@ import Observation
 @Observable
 final class HistoryPanelState {
     var selectedID: UUID?
-    /// Which visual copy is focused: `0` before the break, `1` after.
-    var selectedLoop = 0
+    /// Token id in the history list (`entry uuid`).
+    var selectedTokenID: String?
     var statusMessage: String?
     /// Snapshot when the panel opened; relative timestamps freeze against this.
     var openedAt = Date()
@@ -16,13 +16,10 @@ final class HistoryPanelState {
     var hideCopiedContentMode: HideCopiedContentMode = .securePasteOnly
     /// Snapshot of history content mode for empty-state copy.
     var historyContentMode: HistoryContentMode = .textAndImages
+    /// Snapshot of panel size for this open session.
+    var panelSize: PanelSize = .large
     /// Keyboard moves animate; panel open / reset jumps instantly.
     var animateSelectionScroll = false
-
-    var selectedScrollID: String? {
-        guard let selectedID else { return nil }
-        return Self.scrollID(loop: selectedLoop, entryID: selectedID)
-    }
 
     var shouldHideCopiedContent: Bool {
         switch hideCopiedContentMode {
@@ -33,14 +30,16 @@ final class HistoryPanelState {
         }
     }
 
-    static func scrollID(loop: Int, entryID: UUID) -> String {
-        "\(loop)-\(entryID.uuidString)"
-    }
-
-    func reset(entries: [ClipboardEntry], securePaste: Bool = false) {
+    func reset(
+        entries: [ClipboardEntry],
+        circularWindow: CircularHistoryWindow,
+        securePaste: Bool = false
+    ) {
         animateSelectionScroll = false
+        panelSize = AppSettings.panelSize
+        circularWindow.reset(entries: entries)
+        selectedTokenID = circularWindow.listTopTokenID
         selectedID = entries.first?.id
-        selectedLoop = 0
         statusMessage = nil
         openedAt = Date()
         openedViaSecurePaste = securePaste
@@ -48,46 +47,31 @@ final class HistoryPanelState {
         historyContentMode = AppSettings.historyContentMode
     }
 
-    func select(_ entry: ClipboardEntry, loop: Int) {
+    func select(token: CircularHistoryToken, entry: ClipboardEntry) {
         animateSelectionScroll = false
+        selectedTokenID = token.id
         selectedID = entry.id
-        selectedLoop = loop
     }
 
-    /// Moves selection by `offset`, wrapping around the ends of the list.
-    func moveSelection(by offset: Int, entries: [ClipboardEntry]) {
+    func select(_ entry: ClipboardEntry) {
+        animateSelectionScroll = false
+        selectedID = entry.id
+        if selectedTokenID == entry.id.uuidString {
+            return
+        }
+        selectedTokenID = nil
+    }
+
+    /// Moves selection by `offset`, clamping at the first and last items.
+    func moveSelection(by offset: Int, circularWindow: CircularHistoryWindow) {
         animateSelectionScroll = true
-        guard !entries.isEmpty else {
+        guard let token = circularWindow.moveSelection(from: selectedTokenID, by: offset) else {
             selectedID = nil
-            selectedLoop = 0
+            selectedTokenID = nil
             return
         }
-        let count = entries.count
-        let currentIndex = entries.firstIndex { $0.id == selectedID } ?? 0
-
-        guard count > 1 else {
-            selectedID = entries[0].id
-            selectedLoop = 0
-            return
-        }
-
-        if abs(offset) == 1 {
-            if offset == 1, currentIndex == count - 1 {
-                selectedLoop = selectedLoop == 0 ? 1 : 0
-                selectedID = entries[0].id
-            } else if offset == -1, currentIndex == 0 {
-                if selectedLoop == 1 {
-                    selectedLoop = 0
-                }
-                selectedID = entries[count - 1].id
-            } else {
-                selectedID = entries[currentIndex + offset].id
-            }
-            return
-        }
-
-        let nextIndex = ((currentIndex + offset) % count + count) % count
-        selectedID = entries[nextIndex].id
+        selectedTokenID = token.id
+        selectedID = token.entryID
     }
 
     func selectedEntry(in entries: [ClipboardEntry]) -> ClipboardEntry? {

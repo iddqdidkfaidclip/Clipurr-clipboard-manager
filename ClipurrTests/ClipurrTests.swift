@@ -1,6 +1,7 @@
 import AppKit
 import CryptoKit
 import SwiftData
+import SwiftUI
 import XCTest
 @testable import Clipurr
 
@@ -558,6 +559,42 @@ final class ClipurrTests: XCTestCase {
         }
     }
 
+    func testAppSettingsAppearanceDefaultsAndPersistence() {
+        withIsolatedAppSettings {
+            UserDefaults.standard.removeObject(forKey: "accentColor")
+            UserDefaults.standard.removeObject(forKey: "appearanceTheme")
+            XCTAssertEqual(AppSettings.accentColor, .blue)
+            XCTAssertEqual(AppSettings.appearanceTheme, .softBlack)
+
+            AppSettings.accentColor = .pink
+            AppSettings.appearanceTheme = .light
+            XCTAssertEqual(AppSettings.accentColor, .pink)
+            XCTAssertEqual(AppSettings.appearanceTheme, .light)
+
+            AppSettings.customAccentHex = 0x39C5CF
+            AppSettings.accentColor = .custom
+            XCTAssertEqual(AppSettings.accentColor, .custom)
+            XCTAssertEqual(AppSettings.customAccentHex, 0x39C5CF)
+
+            UserDefaults.standard.removeObject(forKey: "backgroundOpacity")
+            UserDefaults.standard.removeObject(forKey: "backgroundEffect")
+            XCTAssertEqual(AppSettings.backgroundOpacity, 75)
+            XCTAssertEqual(AppSettings.backgroundEffect, .glass)
+            AppSettings.backgroundOpacity = 40
+            XCTAssertEqual(AppSettings.backgroundOpacity, 40)
+            AppSettings.backgroundOpacity = 0
+            XCTAssertEqual(AppSettings.backgroundOpacity, 1)
+            AppSettings.backgroundOpacity = 200
+            XCTAssertEqual(AppSettings.backgroundOpacity, 100)
+            AppSettings.backgroundEffect = .blur
+            XCTAssertEqual(AppSettings.backgroundEffect, .blur)
+
+            XCTAssertEqual(AppearanceTheme.black.colorScheme, .dark)
+            XCTAssertEqual(AppearanceTheme.softBlack.colorScheme, .dark)
+            XCTAssertEqual(AppearanceTheme.light.colorScheme, .light)
+        }
+    }
+
     @MainActor
     func testHistoryClearSchedulerNeverAndOnRestart() throws {
         try withIsolatedAppSettings {
@@ -625,36 +662,55 @@ final class ClipurrTests: XCTestCase {
         let b = ClipboardEntry(capture: ClipboardPayloadCodec.textCapture("B"))
         let c = ClipboardEntry(capture: ClipboardPayloadCodec.textCapture("C"))
         let entries = [a, b, c]
-        state.selectedID = a.id
-        state.selectedLoop = 0
+        let window = CircularHistoryWindow()
+        state.reset(entries: entries, circularWindow: window)
 
-        state.moveSelection(by: 1, entries: entries)
-        XCTAssertEqual(state.selectedID, b.id)
-        XCTAssertEqual(state.selectedLoop, 0)
-
-        state.moveSelection(by: 1, entries: entries)
-        XCTAssertEqual(state.selectedID, c.id)
-
-        // Past the end → first item after the break.
-        state.moveSelection(by: 1, entries: entries)
         XCTAssertEqual(state.selectedID, a.id)
-        XCTAssertEqual(state.selectedLoop, 1)
+        XCTAssertNotNil(state.selectedTokenID)
 
-        // Up across the break → last item before it.
-        state.moveSelection(by: -1, entries: entries)
+        state.moveSelection(by: 1, circularWindow: window)
+        XCTAssertEqual(state.selectedID, b.id)
+
+        state.moveSelection(by: 1, circularWindow: window)
         XCTAssertEqual(state.selectedID, c.id)
-        XCTAssertEqual(state.selectedLoop, 0)
 
-        // Up from the first item → last item.
-        state.selectedID = a.id
-        state.selectedLoop = 0
-        state.moveSelection(by: -1, entries: entries)
+        // Past the end → stays on last item.
+        state.moveSelection(by: 1, circularWindow: window)
         XCTAssertEqual(state.selectedID, c.id)
-        XCTAssertEqual(state.selectedLoop, 0)
 
-        state.moveSelection(by: 1, entries: [])
+        // Up from the first item → stays on first.
+        if let topToken = window.tokens.first {
+            state.select(token: topToken, entry: a)
+        }
+        state.moveSelection(by: -1, circularWindow: window)
+        XCTAssertEqual(state.selectedID, a.id)
+
+        window.reset(entries: [])
+        state.moveSelection(by: 1, circularWindow: window)
         XCTAssertNil(state.selectedID)
-        XCTAssertEqual(state.selectedLoop, 0)
+        XCTAssertNil(state.selectedTokenID)
+    }
+
+    @MainActor
+    func testCircularHistoryWindowIsLinearList() {
+        let entries = (0..<5).map { index in
+            ClipboardEntry(capture: ClipboardPayloadCodec.textCapture("Item \(index)"))
+        }
+        let window = CircularHistoryWindow()
+        window.reset(entries: entries)
+
+        XCTAssertEqual(window.tokens.count, entries.count)
+        XCTAssertEqual(window.listTopTokenID, entries[0].id.uuidString)
+        XCTAssertEqual(window.tokens.map(\.entryID), entries.map(\.id))
+
+        let last = window.moveSelection(from: window.tokens.last?.id, by: 1)
+        XCTAssertEqual(last?.entryID, entries.last?.id)
+
+        let first = window.moveSelection(from: window.tokens.first?.id, by: -1)
+        XCTAssertEqual(first?.entryID, entries.first?.id)
+
+        window.reset(entries: [entries[0]])
+        XCTAssertEqual(window.tokens.count, 1)
     }
 
     @MainActor

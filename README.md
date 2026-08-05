@@ -14,13 +14,20 @@ Like <strong>Win + V</strong>, but better — and built for Mac.<br>
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square" alt="Swift 6">
-  <img src="https://img.shields.io/badge/version-1.0.5-0A84FF?style=flat-square" alt="1.0.5">
+  <img src="https://img.shields.io/badge/version-1.1.0-0A84FF?style=flat-square" alt="1.1.0">
 </p>
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-collage-dark.png">
-    <img src="docs/screenshots/hero-collage-light.png" alt="Clipurr — history, menu bar, and settings" width="900">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/history-dark.png">
+    <img src="docs/screenshots/history-light.png" alt="Clipurr — clipboard history" width="720">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/settings-tabs-dark.gif">
+    <img src="docs/screenshots/settings-tabs-light.gif" alt="Clipurr — settings" width="420">
   </picture>
 </p>
 

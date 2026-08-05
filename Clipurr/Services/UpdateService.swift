@@ -1,7 +1,7 @@
 import AppKit
 import Sparkle
 
-/// Owns the Sparkle updater for menu-bar “Check for Updates…”.
+/// Owns the Sparkle updater for automatic checks and About → Check for Updates.
 @MainActor
 final class UpdateService: NSObject {
     static let shared = UpdateService()

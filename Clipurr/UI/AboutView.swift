@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct AboutView: View {
+    @State private var appearance = AppearanceStore.shared
+
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: ClipurrTheme.Spacing.rowContent) {
@@ -15,12 +17,17 @@ struct AboutView: View {
                         )
                     )
 
-                VStack(spacing: 4) {
+                VStack(spacing: 8) {
                     Text("Clipurr")
                         .font(.title2.weight(.semibold))
                     Text(AppVersion.short)
-                        .font(.caption)
+                        .font(.body)
                         .foregroundStyle(.secondary)
+                    Button(String(localized: "Check for Updates…")) {
+                        UpdateService.shared.checkForUpdates(nil)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
 
                 Text(String(localized: """
@@ -60,7 +67,8 @@ struct AboutView: View {
         }
         .frame(width: 340)
         .fixedSize(horizontal: false, vertical: true)
-        .background(.regularMaterial)
+        .background(appearance.palette.canvas)
+        .clipurrAppearance(appearance)
     }
 
     private func shortcutRow(keys: String, title: String, detail: String) -> some View {

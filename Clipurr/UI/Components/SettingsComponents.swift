@@ -4,6 +4,8 @@ struct SettingsSection<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
 
+    @State private var appearance = AppearanceStore.shared
+
     var body: some View {
         VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.sectionInner) {
             Text(title)
@@ -15,19 +17,21 @@ struct SettingsSection<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
-            .background(
-                RoundedRectangle(
+            .background {
+                let shape = RoundedRectangle(
                     cornerRadius: ClipurrTheme.Radius.section,
                     style: .continuous
                 )
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.55))
-            )
+                shape.fill(appearance.palette.elevated)
+                // Soft accent wash so section cards track the chosen accent.
+                shape.fill(appearance.accentColor.opacity(0.08))
+            }
             .overlay {
                 RoundedRectangle(
                     cornerRadius: ClipurrTheme.Radius.section,
                     style: .continuous
                 )
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                .strokeBorder(appearance.palette.border.opacity(0.9), lineWidth: 1)
             }
         }
     }

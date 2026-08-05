@@ -13,9 +13,7 @@ final class SettingsWindowController {
 
     func show() {
         if window == nil {
-            let hostingController = NSHostingController(
-                rootView: SettingsView(historyStore: historyStore)
-            )
+            let hostingController = NSHostingController(rootView: makeSettingsView())
             hostingController.sizingOptions = [.intrinsicContentSize]
             self.hostingController = hostingController
 
@@ -28,14 +26,27 @@ final class SettingsWindowController {
             settingsWindow.isMovableByWindowBackground = true
             fitContent(in: settingsWindow, hostingController: hostingController)
             settingsWindow.center()
+            AppearanceStore.shared.applyToOpenWindows()
             window = settingsWindow
         } else if let window, let hostingController {
             // Language/content length can change intrinsic height — re-fit.
             fitContent(in: window, hostingController: hostingController)
+            AppearanceStore.shared.applyToOpenWindows()
         }
 
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func makeSettingsView() -> SettingsView {
+        SettingsView(historyStore: historyStore) { [weak self] in
+            self?.refitContent()
+        }
+    }
+
+    private func refitContent() {
+        guard let window, let hostingController else { return }
+        fitContent(in: window, hostingController: hostingController)
     }
 
     private func fitContent(

@@ -1,20 +1,42 @@
 import AppKit
 import SwiftUI
 
+private enum SettingsTab: String, CaseIterable, Identifiable {
+    case general
+    case history
+    case appearance
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: String(localized: "General")
+        case .history: String(localized: "History")
+        case .appearance: String(localized: "Appearance")
+        }
+    }
+}
+
 struct SettingsView: View {
     let historyStore: HistoryStore
+    var onContentChange: (() -> Void)? = nil
 
+    @State private var selectedTab: SettingsTab = .general
     @State private var preferredLanguage = AppSettings.preferredLanguage
     @State private var historyContentMode = AppSettings.historyContentMode
     @State private var hideCopiedContentMode = AppSettings.hideCopiedContentMode
     @State private var historyClearInterval = AppSettings.historyClearInterval
     @State private var encryptHistory = AppSettings.encryptHistory
     @State private var moveToTopOnPaste = AppSettings.moveToTopOnPaste
+    @State private var panelSize = AppSettings.panelSize
+    @State private var panelAnchor = AppSettings.panelAnchor
     @State private var historyLimitText = String(AppSettings.historyLimit)
     @State private var launchAtLogin = LaunchAtLoginService.isEnabled
     @State private var accessibilityGranted = AccessibilityService.isTrusted
     @State private var launchAtLoginError: String?
     @State private var showRestartAlert = false
+    @State private var appearance = AppearanceStore.shared
+    @State private var isPickingCustomAccent = false
     @FocusState private var isHistoryLimitFocused: Bool
 
     var body: some View {
@@ -22,20 +44,47 @@ struct SettingsView: View {
             header
             Divider()
 
-            VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.settingsSections) {
-                generalSection
-                historySection
-                permissionsSection
+            Picker("", selection: $selectedTab) {
+                ForEach(SettingsTab.allCases) { tab in
+                    Text(tab.title).tag(tab)
+                }
             }
-            .padding(ClipurrTheme.Spacing.settingsOuter)
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(.horizontal, ClipurrTheme.Spacing.settingsOuter)
+            .padding(.top, ClipurrTheme.Spacing.settingsOuter)
+            .padding(.bottom, ClipurrTheme.Spacing.sectionInner)
+
+            Group {
+                switch selectedTab {
+                case .general:
+                    VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.settingsSections) {
+                        generalSection
+                        permissionsSection
+                    }
+                case .history:
+                    historySection
+                case .appearance:
+                    appearanceSection
+                }
+            }
+            .padding(.horizontal, ClipurrTheme.Spacing.settingsOuter)
+            .padding(.bottom, ClipurrTheme.Spacing.settingsOuter)
         }
         .frame(width: ClipurrTheme.settingsWidth)
         .fixedSize(horizontal: false, vertical: true)
-        .background(.regularMaterial)
+        .background(appearance.palette.canvas)
+        .clipurrAppearance(appearance)
         .onAppear {
             refreshPermissions()
             encryptHistory = AppSettings.encryptHistory
             moveToTopOnPaste = AppSettings.moveToTopOnPaste
+            panelSize = AppSettings.panelSize
+            panelAnchor = AppSettings.panelAnchor
+            appearance.applyToOpenWindows()
+        }
+        .onChange(of: selectedTab) { _, _ in
+            requestContentRefit()
         }
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
@@ -43,6 +92,8 @@ struct SettingsView: View {
             refreshPermissions()
             encryptHistory = AppSettings.encryptHistory
             moveToTopOnPaste = AppSettings.moveToTopOnPaste
+            panelSize = AppSettings.panelSize
+            panelAnchor = AppSettings.panelAnchor
         }
         .alert(
             String(localized: "Couldn’t update Launch at Login"),
@@ -68,6 +119,12 @@ struct SettingsView: View {
             Button(String(localized: "Later"), role: .cancel) {}
         } message: {
             Text(String(localized: "Clipurr will restart to apply the new language."))
+        }
+    }
+
+    private func requestContentRefit() {
+        DispatchQueue.main.async {
+            onContentChange?()
         }
     }
 
@@ -137,6 +194,17 @@ struct SettingsView: View {
                     .labelsHidden()
                     .toggleStyle(.switch)
             }
+
+            Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
+
+            SettingsRow(
+                title: String(localized: "Encrypt data on disk"),
+                subtitle: String(localized: "Seal clipboard data on disk with a local key")
+            ) {
+                Toggle("", isOn: encryptHistoryBinding)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+            }
         }
     }
 
@@ -158,14 +226,14 @@ struct SettingsView: View {
                             cornerRadius: ClipurrTheme.Radius.control,
                             style: .continuous
                         )
-                        .fill(Color(nsColor: .textBackgroundColor))
+                        .fill(appearance.palette.control)
                     )
                     .overlay {
                         RoundedRectangle(
                             cornerRadius: ClipurrTheme.Radius.control,
                             style: .continuous
                         )
-                        .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                        .strokeBorder(appearance.palette.border, lineWidth: 1)
                     }
                     .focusEffectDisabled()
                     .focused($isHistoryLimitFocused)
@@ -219,17 +287,6 @@ struct SettingsView: View {
             Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
 
             SettingsRow(
-                title: String(localized: "Encrypt history"),
-                subtitle: String(localized: "Seal clipboard data on disk with a local key")
-            ) {
-                Toggle("", isOn: encryptHistoryBinding)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-            }
-
-            Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
-
-            SettingsRow(
                 title: String(localized: "Move to top on paste"),
                 subtitle: String(localized: "Pasted items become newest when you reopen history")
             ) {
@@ -269,6 +326,233 @@ struct SettingsView: View {
                 requestAccessibility()
             }
         }
+    }
+
+    private var appearanceSection: some View {
+        VStack(alignment: .leading, spacing: ClipurrTheme.Spacing.settingsSections) {
+            SettingsSection(title: String(localized: "Theme")) {
+                SettingsRow(
+                    title: String(localized: "Appearance"),
+                    subtitle: String(localized: "Black, soft black, or light window surfaces")
+                ) {
+                    Picker("", selection: themeBinding) {
+                        ForEach(AppearanceTheme.allCases) { theme in
+                            Text(theme.displayName).tag(theme)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                }
+            }
+
+            SettingsSection(title: String(localized: "Accent")) {
+                SettingsRow(
+                    title: String(localized: "Accent color"),
+                    subtitle: String(localized: "Selection rings and settings section tint"),
+                    alignment: .top
+                ) {
+                    accentSwatches
+                }
+            }
+
+            SettingsSection(title: String(localized: "History window")) {
+                SettingsRow(
+                    title: String(localized: "Panel size"),
+                    subtitle: String(localized: "History window size")
+                ) {
+                    Picker("", selection: $panelSize) {
+                        ForEach(PanelSize.allCases) { size in
+                            Text(size.displayName).tag(size)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .onChange(of: panelSize) { _, size in
+                        AppSettings.panelSize = size
+                    }
+                }
+
+                Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
+
+                SettingsRow(
+                    title: String(localized: "Stick to"),
+                    subtitle: String(localized: "Where the history window appears")
+                ) {
+                    Picker("", selection: panelAnchorBinding) {
+                        ForEach(PanelAnchor.allCases) { anchor in
+                            Text(anchor.displayName)
+                                .tag(anchor)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                }
+
+                Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
+
+                SettingsRow(
+                    title: String(localized: "Background effect"),
+                    subtitle: String(localized: "Blur or glass behind the history panel")
+                ) {
+                    Picker("", selection: backgroundEffectBinding) {
+                        ForEach(HistoryBackgroundEffect.allCases) { effect in
+                            Text(effect.displayName).tag(effect)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                }
+
+                Divider().padding(.leading, ClipurrTheme.Spacing.statusHorizontal)
+
+                SettingsRow(
+                    title: String(localized: "Background opacity"),
+                    subtitle: String(localized: "Tint strength over the backdrop (history only)")
+                ) {
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: backgroundOpacityBinding,
+                            in: Double(AppSettings.minBackgroundOpacity)
+                                ... Double(AppSettings.maxBackgroundOpacity)
+                        )
+                        .controlSize(.small)
+                        .frame(width: 140)
+                        .focusEffectDisabled()
+                        Text("\(appearance.backgroundOpacity)%")
+                            .font(.caption.monospacedDigit().weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 36, alignment: .trailing)
+                    }
+                }
+            }
+        }
+    }
+
+    private var accentSwatches: some View {
+        HStack(spacing: 8) {
+            ForEach(AccentColorChoice.presets) { choice in
+                Button {
+                    isPickingCustomAccent = false
+                    appearance.setAccent(choice)
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(choice.swiftUIColor)
+                            .frame(width: 22, height: 22)
+                        if appearance.accent == choice {
+                            Circle()
+                                .strokeBorder(Color.primary.opacity(0.85), lineWidth: 1.5)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(accentCheckmarkColor(for: choice.swiftUIColor))
+                        }
+                    }
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(choice.displayName)
+                .accessibilityLabel(choice.displayName)
+                .accessibilityAddTraits(appearance.accent == choice ? .isSelected : [])
+            }
+
+            customAccentSwatch
+        }
+    }
+
+    /// Rainbow ring that opens the system color wheel for a custom accent.
+    private var customAccentSwatch: some View {
+        Button(action: openCustomColorWheel) {
+            ZStack {
+                Circle()
+                    .fill(
+                        AngularGradient(
+                            colors: [
+                                .red, .orange, .yellow, .green,
+                                .mint, .blue, .purple, .pink, .red
+                            ],
+                            center: .center
+                        )
+                    )
+                    .frame(width: 22, height: 22)
+                    .overlay {
+                        Circle()
+                            .fill(
+                                appearance.accent == .custom
+                                    ? appearance.customAccent
+                                    : appearance.palette.elevated
+                            )
+                            .padding(5)
+                    }
+
+                if appearance.accent == .custom {
+                    Circle()
+                        .strokeBorder(Color.primary.opacity(0.85), lineWidth: 1.5)
+                        .frame(width: 28, height: 28)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(accentCheckmarkColor(for: appearance.customAccent))
+                }
+            }
+            .frame(width: 28, height: 28)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(String(localized: "Custom"))
+        .accessibilityLabel(String(localized: "Custom"))
+        .accessibilityAddTraits(appearance.accent == .custom ? .isSelected : [])
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSColorPanel.colorDidChangeNotification)
+        ) { notification in
+            guard isPickingCustomAccent else { return }
+            guard let panel = notification.object as? NSColorPanel else { return }
+            appearance.setCustomAccent(Color(nsColor: panel.color))
+        }
+    }
+
+    private func openCustomColorWheel() {
+        isPickingCustomAccent = true
+        let panel = NSColorPanel.shared
+        panel.showsAlpha = false
+        panel.mode = .wheel
+        panel.color = NSColor(appearance.customAccent)
+        panel.orderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        // Selecting on the wheel writes through colorDidChangeNotification.
+        if appearance.accent != .custom {
+            appearance.setCustomAccent(appearance.customAccent)
+        }
+    }
+
+    private func accentCheckmarkColor(for color: Color) -> Color {
+        color.isAccentCheckmarkDark
+            ? Color.black.opacity(0.65)
+            : Color.white.opacity(0.92)
+    }
+
+    private var themeBinding: Binding<AppearanceTheme> {
+        Binding(
+            get: { appearance.theme },
+            set: { newValue in
+                appearance.setTheme(newValue)
+                requestContentRefit()
+            }
+        )
+    }
+
+    private var backgroundOpacityBinding: Binding<Double> {
+        Binding(
+            get: { Double(appearance.backgroundOpacity) },
+            set: { appearance.setBackgroundOpacity(Int($0.rounded())) }
+        )
+    }
+
+    private var backgroundEffectBinding: Binding<HistoryBackgroundEffect> {
+        Binding(
+            get: { appearance.backgroundEffect },
+            set: { appearance.setBackgroundEffect($0) }
+        )
     }
 
     private var launchAtLoginBinding: Binding<Bool> {
@@ -317,6 +601,16 @@ struct SettingsView: View {
             set: { enabled in
                 moveToTopOnPaste = enabled
                 AppSettings.moveToTopOnPaste = enabled
+            }
+        )
+    }
+
+    private var panelAnchorBinding: Binding<PanelAnchor> {
+        Binding(
+            get: { panelAnchor },
+            set: { newValue in
+                panelAnchor = newValue
+                AppSettings.panelAnchor = newValue
             }
         )
     }
