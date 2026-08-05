@@ -3,6 +3,14 @@
     <channel>
         <title>Clipurr</title>
         <item>
+            <title>1.1.0</title>
+            <pubDate>Wed, 05 Aug 2026 13:17:53 +0000</pubDate>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/iddqdidkfaidclip/Clipurr/releases/download/v1.1.0/Clipurr-1.1.0.dmg" length="2968264" type="application/octet-stream" sparkle:edSignature="LcCOQa4eLLlM84WR1W8u/AbzcNn2BT9uwVoMzCqm6k08RrKQznmvC8E1EKwr5YRIbqkqQAJOLDFVAL0XgxtAAQ=="/>
+        </item>
+        <item>
             <title>1.0.5</title>
             <pubDate>Tue, 04 Aug 2026 09:08:34 +0000</pubDate>
             <sparkle:version>5</sparkle:version>
