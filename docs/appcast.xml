@@ -3,6 +3,14 @@
     <channel>
         <title>Clipurr</title>
         <item>
+            <title>1.1.1</title>
+            <pubDate>Wed, 05 Aug 2026 15:37:35 +0000</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/iddqdidkfaidclip/Clipurr/releases/download/v1.1.1/Clipurr-1.1.1.dmg" length="3011851" type="application/octet-stream" sparkle:edSignature="xoLORvfhzBrvxc58Ihl/y7bUsynOBeCauTNey3hrq3KY0lmDQc1UQ2QBmr7BcB89blNNi57pOK3kwRchDsPyAA=="/>
+        </item>
+        <item>
             <title>1.1.0</title>
             <pubDate>Wed, 05 Aug 2026 13:17:53 +0000</pubDate>
             <sparkle:version>6</sparkle:version>
@@ -17,14 +25,6 @@
             <sparkle:shortVersionString>1.0.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/iddqdidkfaidclip/Clipurr/releases/download/v1.0.5/Clipurr-1.0.5.dmg" length="2651369" type="application/octet-stream" sparkle:edSignature="g4QLbkOVgUIFa4qkCDA6FDZHsoTisGgf3XDNDyCkKz/PxFVL6+ftP5bOnUK7LNTgeQYx3as3BSOadjJ2gpYDBA=="/>
-        </item>
-        <item>
-            <title>1.0.0</title>
-            <pubDate>Sat, 01 Aug 2026 23:43:43 +0000</pubDate>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/iddqdidkfaidclip/Clipurr-clipboard-manager/releases/download/v1.0.0/Clipurr-1.0.0.dmg" length="2621917" type="application/octet-stream" sparkle:edSignature="Co/qMkzisCtsTPLxp88GwN0yVqL7CaHIlqshvBSPSbjs6XqzXSlK7daHooHsjhJEFyKQs86eLDgwniKjWr/DDA=="/>
         </item>
     </channel>
 </rss>
