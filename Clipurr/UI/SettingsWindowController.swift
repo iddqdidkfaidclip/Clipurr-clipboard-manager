@@ -77,31 +77,23 @@ final class SettingsWindowController {
             height: max(1, fitting.height)
         )
 
-        let targetFrame = framePreservingTopEdge(for: window, contentSize: contentSize)
-        let current = window.frame
-        guard abs(current.width - targetFrame.width) > 0.5
-            || abs(current.height - targetFrame.height) > 0.5
+        let currentSize = window.contentRect(forFrameRect: window.frame).size
+        guard abs(currentSize.width - contentSize.width) > 0.5
+            || abs(currentSize.height - contentSize.height) > 0.5
         else { return }
 
         if animated {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.28
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                context.allowsImplicitAnimation = true
-                window.animator().setFrame(targetFrame, display: true)
+                // Let AppKit keep the top edge fixed while only the content
+                // size animates. Implicit layout animation made SwiftUI fight
+                // the window resize and produced a small vertical jerk.
+                context.allowsImplicitAnimation = false
+                window.animator().setContentSize(contentSize)
             }
         } else {
-            window.setFrame(targetFrame, display: true)
+            window.setContentSize(contentSize)
         }
-    }
-
-    /// Grow/shrink from the bottom so the titlebar doesn’t jump on tab changes.
-    private func framePreservingTopEdge(for window: NSWindow, contentSize: NSSize) -> NSRect {
-        let frameForContent = window.frameRect(forContentRect: NSRect(origin: .zero, size: contentSize))
-        var frame = window.frame
-        let heightDelta = frameForContent.height - frame.height
-        frame.size = frameForContent.size
-        frame.origin.y -= heightDelta
-        return frame
     }
 }
